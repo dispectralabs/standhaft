@@ -1,0 +1,33 @@
+# Rust
+target/
+
+# SP1 / zkVM artifacts
+.sp1/
+*.program
+proofs/
+
+# Foundry
+cache/
+out/
+broadcast/
+ Snapshot
+
+# Node / TypeScript
+node_modules/
+dist/
+build/
+.turbo/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
