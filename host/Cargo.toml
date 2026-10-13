@@ -7,7 +7,7 @@ publish = false
 [workspace]
 
 [dependencies]
-sp1-sdk = "6.9.0"
+sp1-sdk = { version = "6.9.0", features = ["native-gnark"] }
 tokio = { version = "1", features = ["full"] }
 
 [build-dependencies]

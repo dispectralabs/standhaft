@@ -31,3 +31,8 @@ secrets/
 Thumbs.db
 .idea/
 .vscode/
+
+# Faz 0 artifacts
+host/*.bin
+host/*.hex
+faz0_*_log.txt
