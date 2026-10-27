@@ -81,7 +81,8 @@ fn main() {
 }
 
 fn decode_hex(label: &str, s: &str, expect: Option<usize>) -> Result<Vec<u8>, String> {
-    let v = hex::decode(s.trim()).map_err(|e| format!("{label}: invalid hex: {e}"))?;
+    let trimmed = s.trim().strip_prefix("0x").unwrap_or(s.trim());
+    let v = hex::decode(trimmed).map_err(|e| format!("{label}: invalid hex: {e}"))?;
     if let Some(n) = expect {
         if v.len() != n {
             return Err(format!("{label}: expected {n} bytes, got {}", v.len()));
