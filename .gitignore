@@ -46,3 +46,4 @@ faz0_*_log.txt
 crypto/target/
 lib_tmp/
 vendor/
+zk-artifacts/
