@@ -62,7 +62,11 @@ fn signing_is_deterministic_same_seed_same_message() {
     let a = run(&["sign", "--secret-key", SEED, "--message", &m]);
     let b = run(&["sign", "--secret-key", SEED, "--message", &m]);
     assert!(a.status.success() && b.status.success());
-    assert_eq!(stdout(&a), stdout(&b), "same seed + message must give identical output");
+    assert_eq!(
+        stdout(&a),
+        stdout(&b),
+        "same seed + message must give identical output"
+    );
 }
 
 #[test]
@@ -70,20 +74,31 @@ fn sign_0x_prefix_is_equivalent_to_bare_hex() {
     let msg = [0x33u8; 32];
     let m = hex(msg);
     let a = run(&["sign", "--secret-key", SEED, "--message", &m]);
-    let b = run(&["sign", "--secret-key", &format!("0x{SEED}"), "--message", &format!("0x{m}")]);
+    let b = run(&[
+        "sign",
+        "--secret-key",
+        &format!("0x{SEED}"),
+        "--message",
+        &format!("0x{m}"),
+    ]);
     assert_eq!(stdout(&a), stdout(&b), "0x prefix must not change results");
 }
 
 #[test]
-fn uppercase_0X_prefix_is_rejected_gracefully_not_panicked() {
-    // Documents current behavior: only lowercase "0x" is stripped; "0X..." then fails
-    // hex decoding. Must be a clean error (exit 1), never a panic.
+fn uppercase_0X_prefix_is_accepted_like_lowercase() {
+    // REMEDIATED (audit2 A2-07): the "0X" prefix is now stripped case-insensitively,
+    // matching `cast`-style input expectations. Clean success, never a panic.
     let msg = [0x44u8; 32];
     let m = hex(msg);
-    let out = run(&["sign", "--secret-key", &format!("0X{SEED}"), "--message", &m]);
-    assert!(!out.status.success());
-    assert_eq!(out.status.code(), Some(1));
-    assert!(stderr(&out).contains("invalid hex"), "got: {}", stderr(&out));
+    let out = run(&[
+        "sign",
+        "--secret-key",
+        &format!("0X{SEED}"),
+        "--message",
+        &m,
+    ]);
+    assert!(out.status.success(), "got: {}", stderr(&out));
+    assert!(stdout(&out).contains("\"valid\"") || stdout(&out).contains("signature"));
 }
 
 #[test]
@@ -114,7 +129,15 @@ fn wrong_length_secret_key_is_length_error() {
 #[test]
 fn verify_rejects_wrong_length_public_key_gracefully() {
     let msg = [0x02u8; 32];
-    let out = run(&["verify", "--public-key", "aabb", "--message", &hex(msg), "--signature", &"ab".repeat(2420)]);
+    let out = run(&[
+        "verify",
+        "--public-key",
+        "aabb",
+        "--message",
+        &hex(msg),
+        "--signature",
+        &"ab".repeat(2420),
+    ]);
     assert!(!out.status.success());
     assert!(stderr(&out).contains("expected 1312 bytes, got 2"));
 }
@@ -123,17 +146,24 @@ fn verify_rejects_wrong_length_public_key_gracefully() {
 fn verify_rejects_wrong_length_signature_gracefully() {
     let msg = [0x03u8; 32];
     let pk = real_pk();
-    let out = run(&["verify", "--public-key", &pk, "--message", &hex(msg), "--signature", "deadbeef"]);
+    let out = run(&[
+        "verify",
+        "--public-key",
+        &pk,
+        "--message",
+        &hex(msg),
+        "--signature",
+        "deadbeef",
+    ]);
     assert!(!out.status.success());
     assert!(stderr(&out).contains("expected 2420 bytes, got 4"));
 }
 
 #[test]
-fn verify_invalid_but_wellformed_signature_reports_valid_false_with_exit_zero() {
-    // DOCUMENTED HAZARD (audit2): a signature that DECODES fine but fails FIPS 204
-    // verification still exits 0 — scripts that gate on the exit code
-    // (e.g. `standhaft verify ... && relay`) would treat a bad signature as success.
-    // The authoritative signal is the JSON "valid" field.
+fn verify_invalid_but_wellformed_signature_exits_2_with_valid_false_json() {
+    // REMEDIATED (audit2 A2-01): a signature that DECODES fine but fails FIPS 204
+    // verification now exits 2, so `standhaft verify … && relay` gates correctly.
+    // The JSON "valid" field is still printed on stdout for programmatic use.
     let msg = [0x04u8; 32];
     let m = hex(msg);
     let good = run(&["sign", "--secret-key", SEED, "--message", &m]);
@@ -144,8 +174,16 @@ fn verify_invalid_but_wellformed_signature_reports_valid_false_with_exit_zero() 
     let mut raw = hex::decode(&sig).expect("sig hex");
     raw[10] ^= 0x40;
     let bad_sig: String = raw.iter().map(|b| format!("{b:02x}")).collect();
-    let out = run(&["verify", "--public-key", &pk, "--message", &m, "--signature", &bad_sig]);
-    assert!(out.status.success(), "verify exits 0 for a well-formed invalid signature");
+    let out = run(&[
+        "verify",
+        "--public-key",
+        &pk,
+        "--message",
+        &m,
+        "--signature",
+        &bad_sig,
+    ]);
+    assert_eq!(out.status.code(), Some(2), "invalid signature exits 2");
     assert!(stdout(&out).contains("\"valid\": false"));
 }
 
@@ -156,9 +194,24 @@ fn verify_structurally_malformed_signature_errors_out_instead() {
     let msg = [0x05u8; 32];
     let pk = real_pk();
     let zeros = "00".repeat(2420);
-    let out = run(&["verify", "--public-key", &pk, "--message", &hex(msg), "--signature", &zeros]);
-    assert!(!out.status.success(), "structurally invalid signature is a hard error");
-    assert!(stderr(&out).contains("signature: decode failed"), "got: {}", stderr(&out));
+    let out = run(&[
+        "verify",
+        "--public-key",
+        &pk,
+        "--message",
+        &hex(msg),
+        "--signature",
+        &zeros,
+    ]);
+    assert!(
+        !out.status.success(),
+        "structurally invalid signature is a hard error"
+    );
+    assert!(
+        stderr(&out).contains("signature: decode failed"),
+        "got: {}",
+        stderr(&out)
+    );
 }
 
 #[test]
@@ -168,7 +221,10 @@ fn commitment_subcommand_agrees_with_keccak_and_solidity_constant() {
     // (test/audit2/Audit2Fixtures.sol::PK) — same seed, same crate determinism.
     let cmt_out = run(&["commitment", "--public-key", &pk]);
     let cmt = json_field(&cmt_out, "commitment");
-    assert_eq!(cmt, CMT, "CLI commitment must equal the audit-fixed commitment constant");
+    assert_eq!(
+        cmt, CMT,
+        "CLI commitment must equal the audit-fixed commitment constant"
+    );
 
     // Independent keccak256 via the sha3 crate (same primitive the Solidity side uses
     // via keccak256 opcode) — catches any transcription error.
@@ -185,9 +241,15 @@ fn sign_accepts_non_32_byte_messages_documents_laxness() {
     // preimage (e.g. the 6-word abi.encode blob) instead of its 32-byte digest gets a
     // signature the vault will REJECT — silently, at sign time. No warning today.
     let out = run(&["sign", "--secret-key", SEED, "--message", "aabbcc"]);
-    assert!(out.status.success(), "signing 3 bytes succeeds (no length convention enforced)");
+    assert!(
+        out.status.success(),
+        "signing 3 bytes succeeds (no length convention enforced)"
+    );
     let out_empty = run(&["sign", "--secret-key", SEED, "--message", ""]);
-    assert!(out_empty.status.success(), "signing the EMPTY message also succeeds");
+    assert!(
+        out_empty.status.success(),
+        "signing the EMPTY message also succeeds"
+    );
 }
 
 #[test]
@@ -197,7 +259,11 @@ fn whitespace_around_hex_is_tolerated() {
     let a = run(&["sign", "--secret-key", SEED, "--message", &padded]);
     let b = run(&["sign", "--secret-key", SEED, "--message", &hex(msg)]);
     assert!(a.status.success());
-    assert_eq!(stdout(&a), stdout(&b), "trim() should make padded input equivalent");
+    assert_eq!(
+        stdout(&a),
+        stdout(&b),
+        "trim() should make padded input equivalent"
+    );
 }
 
 #[test]
@@ -206,11 +272,18 @@ fn keygen_shapes_and_commitment_self_consistency() {
     assert!(out.status.success());
     let s = stdout(&out);
     assert!(s.contains("ML-DSA-44"));
-    assert!(s.contains("32-byte seed"), "must keep the secret_key_note disambiguation");
+    assert!(
+        s.contains("32-byte seed"),
+        "must keep the secret_key_note disambiguation"
+    );
     let seed = json_field(&out, "secret_key");
     let pk = json_field(&out, "public_key");
     let cmt = json_field(&out, "commitment");
-    assert_eq!(seed.len(), 64, "secret_key is the 32-byte SEED, not the 2560-byte FIPS 204 sk");
+    assert_eq!(
+        seed.len(),
+        64,
+        "secret_key is the 32-byte SEED, not the 2560-byte FIPS 204 sk"
+    );
     assert_eq!(pk.len(), 1312 * 2);
     assert_eq!(hex::decode(&seed).expect("seed hex").len(), 32);
     assert_eq!(hex::decode(&pk).expect("pk hex").len(), 1312);

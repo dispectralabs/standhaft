@@ -49,13 +49,11 @@ contract Vault {
         returns (bool success)
     {
         uint256 n = nonce;
-        bytes32 msgHash = keccak256(
-            abi.encode(block.chainid, address(this), target, value, keccak256(data), n)
-        );
+        bytes32 msgHash = keccak256(abi.encode(block.chainid, address(this), target, value, keccak256(data), n));
         _accept(msgHash, proof);
         nonce = n + 1;
 
-        (success, ) = target.call{value: value}(data);
+        (success,) = target.call{value: value}(data);
         if (!success) revert CallFailed(target, _returnData());
         emit Executed(target, value, data, n);
     }
@@ -76,7 +74,7 @@ contract Vault {
 
         uint256 len = calls.length;
         for (uint256 i = 0; i < len; ++i) {
-            (bool success, ) = calls[i].target.call{value: calls[i].value}(calls[i].data);
+            (bool success,) = calls[i].target.call{value: calls[i].value}(calls[i].data);
             if (!success) revert CallFailed(calls[i].target, _returnData());
         }
         emit ExecutedBatch(len, n);

@@ -31,11 +31,7 @@ contract PaymasterSkeletonTest is Test {
         paymaster.deposit{value: 1 ether}();
     }
 
-    function _sponsoredOp(address to, uint256 value)
-        internal
-        view
-        returns (PackedUserOperation memory op)
-    {
+    function _sponsoredOp(address to, uint256 value) internal view returns (PackedUserOperation memory op) {
         op.sender = address(account);
         op.nonce = ep.getNonce(address(account), 0);
         op.callData = abi.encodeCall(BaseAccount.execute, (to, value, new bytes(0)));
@@ -84,8 +80,7 @@ contract PaymasterSkeletonTest is Test {
         assertFalse(ok, "handleOps should revert on cap");
 
         bytes memory payload = _stripSelector(ret);
-        (uint256 opIndex, string memory reason, bytes memory inner) =
-            abi.decode(payload, (uint256, string, bytes));
+        (uint256 opIndex, string memory reason, bytes memory inner) = abi.decode(payload, (uint256, string, bytes));
         assertEq(opIndex, 0);
         assertEq(reason, "AA33 reverted");
 
@@ -118,7 +113,7 @@ contract PaymasterSkeletonTest is Test {
             address(ep).call(abi.encodeCall(IEntryPoint.handleOps, (ops, payable(makeAddr("beneficiary")))));
         assertFalse(ok, "handleOps should revert when cap is 0");
 
-        (, , bytes memory inner) = abi.decode(_stripSelector(ret), (uint256, string, bytes));
+        (,, bytes memory inner) = abi.decode(_stripSelector(ret), (uint256, string, bytes));
 
         uint256 firstWord;
         uint256 maxCost;

@@ -32,8 +32,7 @@ contract VaultTest is Test {
     MockVerifier internal mockVerifier;
     Recipient internal recipient;
 
-    bytes32 internal constant CMT =
-        bytes32(uint256(uint160(0xA11CE)));
+    bytes32 internal constant CMT = bytes32(uint256(uint160(0xA11CE)));
     uint256 internal constant CHAIN = 31_337;
 
     function setUp() public {
@@ -46,13 +45,8 @@ contract VaultTest is Test {
     // ---------------------------------------------------------- proof helper
 
     /// Build a valid mock proof for the canonical single-call preimage.
-    function _proof(address target, uint256 value, bytes memory data, uint256 n)
-        internal
-        view
-        returns (bytes memory)
-    {
-        bytes32 msgHash =
-            keccak256(abi.encode(CHAIN, address(vault), target, value, keccak256(data), n));
+    function _proof(address target, uint256 value, bytes memory data, uint256 n) internal view returns (bytes memory) {
+        bytes32 msgHash = keccak256(abi.encode(CHAIN, address(vault), target, value, keccak256(data), n));
         return abi.encodePacked(bytes1(0x01), CMT, msgHash);
     }
 
@@ -153,9 +147,8 @@ contract VaultTest is Test {
         Vault vaultB = new Vault(CMT, address(mockVerifier));
         vm.deal(address(vaultB), 1 ether);
         bytes memory data = "";
-        bytes32 msgHashB = keccak256(
-            abi.encode(CHAIN, address(vaultB), address(recipient), 1 ether, keccak256(data), 0)
-        );
+        bytes32 msgHashB =
+            keccak256(abi.encode(CHAIN, address(vaultB), address(recipient), 1 ether, keccak256(data), 0));
         bytes memory proofB = abi.encodePacked(bytes1(0x01), CMT, msgHashB);
 
         // execute vaultB's transaction on vaultA → digest mismatch
@@ -237,9 +230,7 @@ contract VaultTest is Test {
         assertEq(IVaultVerifier(vault.verifier()).scheme(), "mock");
     }
 
-    function test_fuzz_execute_valid_proofs(address target, uint96 value, bytes calldata data)
-        public
-    {
+    function test_fuzz_execute_valid_proofs(address target, uint96 value, bytes calldata data) public {
         vm.assume(target != address(0));
         vm.assume(uint160(target) > 0xff); // skip precompiles & system addresses
         vm.assume(target.code.length == 0);

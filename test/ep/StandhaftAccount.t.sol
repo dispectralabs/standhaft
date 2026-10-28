@@ -34,8 +34,7 @@ contract StandhaftAccountTest is Test {
         op.sender = address(account);
         op.nonce = ep.getNonce(address(account), 0);
         op.callData = abi.encodeCall(BaseAccount.execute, (to, value, new bytes(0)));
-        op.accountGasLimits =
-            bytes32((uint256(uint128(500_000)) << 128) | uint128(2_000_000));
+        op.accountGasLimits = bytes32((uint256(uint128(500_000)) << 128) | uint128(2_000_000));
         op.preVerificationGas = 60_000;
         op.gasFees = bytes32((uint256(uint128(1 gwei)) << 128) | uint128(2 gwei));
         bytes32 userOpHash = ep.getUserOpHash(op);

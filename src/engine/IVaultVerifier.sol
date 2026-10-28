@@ -11,10 +11,7 @@ pragma solidity ^0.8.37;
 interface IVaultVerifier {
     /// @return valid true iff the proof is a valid authorization of `messageHash`
     ///         by the key committed to `commitment`.
-    function verify(bytes32 commitment, bytes32 messageHash, bytes calldata proof)
-        external
-        view
-        returns (bool valid);
+    function verify(bytes32 commitment, bytes32 messageHash, bytes calldata proof) external view returns (bool valid);
 
     /// @notice Human-readable scheme id, e.g. "ML-DSA-44" or "mock".
     function scheme() external view returns (string memory);

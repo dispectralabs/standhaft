@@ -12,3 +12,4 @@ sha3.workspace = true
 hex.workspace = true
 serde_json.workspace = true
 clap = { version = "4", features = ["derive"] }
+zeroize.workspace = true

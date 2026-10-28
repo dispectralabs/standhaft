@@ -4,7 +4,9 @@
 //! digest binding, tamper resistance, seed/pk/commitment consistency, and an
 //! end-to-end emulation of the Vault canonical digest signed by the CLI flow.
 
-use ml_dsa::{KeyExport, KeyInit, Keypair, MlDsa44, Signature, Signer, SigningKey, Verifier, VerifyingKey};
+use ml_dsa::{
+    KeyExport, KeyInit, Keypair, MlDsa44, Signature, Signer, SigningKey, Verifier, VerifyingKey,
+};
 use sha3::{Digest, Keccak256};
 
 fn keccak(data: &[u8]) -> [u8; 32] {
@@ -31,11 +33,19 @@ fn deterministic_signing_same_seed_same_digest() {
 
     let sig1 = sk1.sign(&digest).encode();
     let sig2 = sk2.sign(&digest).encode();
-    assert_eq!(sig1.as_slice(), sig2.as_slice(), "signing must be deterministic");
+    assert_eq!(
+        sig1.as_slice(),
+        sig2.as_slice(),
+        "signing must be deterministic"
+    );
 
     let vk1 = sk1.verifying_key().encode();
     let vk2 = sk2.verifying_key().encode();
-    assert_eq!(vk1.as_slice(), vk2.as_slice(), "seed must expand to identical pk");
+    assert_eq!(
+        vk1.as_slice(),
+        vk2.as_slice(),
+        "seed must expand to identical pk"
+    );
 }
 
 #[test]
@@ -49,10 +59,14 @@ fn digest_binding_single_bit_flip_breaks_signature() {
     let mut digest = keccak(b"standhaft canonical digest");
     let sig = sk.sign(&digest).encode();
 
-    assert!(vk.verify(&digest, &Signature::<MlDsa44>::try_from(&sig[..]).unwrap()).is_ok());
+    assert!(vk
+        .verify(&digest, &Signature::<MlDsa44>::try_from(&sig[..]).unwrap())
+        .is_ok());
 
     digest[31] ^= 0x01;
-    assert!(vk.verify(&digest, &Signature::<MlDsa44>::try_from(&sig[..]).unwrap()).is_err());
+    assert!(vk
+        .verify(&digest, &Signature::<MlDsa44>::try_from(&sig[..]).unwrap())
+        .is_err());
 }
 
 #[test]
@@ -72,7 +86,11 @@ fn tampered_signature_regions_fail() {
             Ok(s) => vk.verify(&digest, &s).is_ok(),
             Err(_) => false, // decode rejection also counts as tamper-proofing
         };
-        assert!(!ok, "flipped byte at offset {} must invalidate signature", offset);
+        assert!(
+            !ok,
+            "flipped byte at offset {} must invalidate signature",
+            offset
+        );
     }
 }
 
@@ -125,7 +143,9 @@ fn cli_accepts_non_32byte_messages() {
     let vk = sk.verifying_key();
     let msg: &[u8] = b"pay alice 1 ETH"; // 15 bytes, NOT a digest
     let sig = sk.sign(msg).encode();
-    assert!(vk.verify(msg, &Signature::<MlDsa44>::try_from(&sig[..]).unwrap()).is_ok());
+    assert!(vk
+        .verify(msg, &Signature::<MlDsa44>::try_from(&sig[..]).unwrap())
+        .is_ok());
 }
 
 #[test]
@@ -172,17 +192,31 @@ fn vault_canonical_digest_emulation_binds_everything() {
     let sig = sk.sign(&msg_hash).encode();
 
     // valid for the exact canonical digest
-    assert!(vk.verify(&msg_hash, &Signature::<MlDsa44>::try_from(&sig[..]).unwrap()).is_ok());
+    assert!(vk
+        .verify(
+            &msg_hash,
+            &Signature::<MlDsa44>::try_from(&sig[..]).unwrap()
+        )
+        .is_ok());
 
     // replay protection: nonce+1 digest must NOT verify
     let mut replayed = words.clone();
     let last = replayed.len() - 32;
     replayed[last + 31] = 1; // nonce = 1
     let replay_digest = keccak(&replayed);
-    assert!(vk.verify(&replay_digest, &Signature::<MlDsa44>::try_from(&sig[..]).unwrap()).is_err());
+    assert!(vk
+        .verify(
+            &replay_digest,
+            &Signature::<MlDsa44>::try_from(&sig[..]).unwrap()
+        )
+        .is_err());
 
     // data ambiguity guard: keccak256("") != keccak256(bytes32(0x00))
     let mut zero32 = [0u8; 32];
     zero32[31] = 0; // all-zero 32-byte word
-    assert_ne!(data_hash, keccak(&zero32), "empty data and 32-zero-byte data hash differently");
+    assert_ne!(
+        data_hash,
+        keccak(&zero32),
+        "empty data and 32-zero-byte data hash differently"
+    );
 }

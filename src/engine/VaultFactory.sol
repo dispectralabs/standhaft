@@ -17,10 +17,7 @@ contract VaultFactory {
 
     /// @notice Deploys a vault at the counterfactual address. Deterministic per
     ///         (commitment, verifier, salt); reverts if already deployed.
-    function createVault(bytes32 commitment, address verifier, bytes32 salt)
-        external
-        returns (address vault)
-    {
+    function createVault(bytes32 commitment, address verifier, bytes32 salt) external returns (address vault) {
         vault = computeAddress(commitment, verifier, salt);
         if (vault.code.length != 0) revert AlreadyDeployed(vault);
 
@@ -35,13 +32,8 @@ contract VaultFactory {
 
     /// @notice Counterfactual address for (commitment, verifier, salt).
     ///         CREATE2: keccak256(0xff ++ factory ++ salt ++ keccak256(init_code ++ args))
-    function computeAddress(bytes32 commitment, address verifier, bytes32 salt)
-        public
-        view
-        returns (address)
-    {
-        bytes32 codeHash =
-            keccak256(abi.encodePacked(type(Vault).creationCode, abi.encode(commitment, verifier)));
+    function computeAddress(bytes32 commitment, address verifier, bytes32 salt) public view returns (address) {
+        bytes32 codeHash = keccak256(abi.encodePacked(type(Vault).creationCode, abi.encode(commitment, verifier)));
         bytes32 h = keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, codeHash));
         return address(uint160(uint256(h)));
     }

@@ -29,14 +29,7 @@ contract VaultHandler {
     function attemptExecute(uint256 seed, uint256 value) external {
         require(value <= address(vault).balance, "over balance");
         bytes32 msgHash = keccak256(
-            abi.encode(
-                block.chainid,
-                address(vault),
-                recipient,
-                value,
-                keccak256(new bytes(0)),
-                vault.nonce()
-            )
+            abi.encode(block.chainid, address(vault), recipient, value, keccak256(new bytes(0)), vault.nonce())
         );
         bytes memory proof;
         bool valid = seed % 4 == 0;

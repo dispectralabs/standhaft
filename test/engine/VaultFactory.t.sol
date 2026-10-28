@@ -44,7 +44,11 @@ contract VaultFactoryTest is Test {
 
     function test_double_deploy_reverts() public {
         factory.createVault(CMT, address(verifier), SALT);
-        vm.expectRevert(abi.encodeWithSelector(VaultFactory.AlreadyDeployed.selector, factory.computeAddress(CMT, address(verifier), SALT)));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                VaultFactory.AlreadyDeployed.selector, factory.computeAddress(CMT, address(verifier), SALT)
+            )
+        );
         factory.createVault(CMT, address(verifier), SALT);
     }
 

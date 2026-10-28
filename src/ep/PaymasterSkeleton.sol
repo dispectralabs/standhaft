@@ -29,11 +29,12 @@ contract PaymasterSkeleton is BasePaymaster {
         maxSponsorCost = newCap;
     }
 
-    function _validatePaymasterUserOp(
-        PackedUserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 maxCost
-    ) internal view override returns (bytes memory context, uint256 validationData) {
+    function _validatePaymasterUserOp(PackedUserOperation calldata userOp, bytes32 userOpHash, uint256 maxCost)
+        internal
+        view
+        override
+        returns (bytes memory context, uint256 validationData)
+    {
         if (maxCost > maxSponsorCost) revert SponsorCostExceeded(maxCost, maxSponsorCost);
 
         context = abi.encode(userOp.sender, userOpHash);
