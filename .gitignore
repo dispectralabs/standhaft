@@ -7,16 +7,42 @@ out/
 .ignore/
 
 # Ignores development broadcast logs
-!/broadcast
-/broadcast/*/31337/
-/broadcast/**/dry-run/
+broadcast/
 
+# Rust
+target/
 
-# Dotenv file
+# SP1 / zkVM artifacts
+.sp1/
+*.program
+proofs/
+
+# Node / TypeScript
+node_modules/
+dist/
+build/
+.turbo/
+
+# Environment & secrets
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+secrets/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Faz 0 artifacts
+host/*.bin
+host/*.hex
+faz0_*_log.txt
+
+# Local
 crypto/target/
-/broadcast/
 lib_tmp/
 vendor/
