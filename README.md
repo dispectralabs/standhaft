@@ -73,4 +73,4 @@ forge script script/Deploy.s.sol --broadcast --rpc-url $RPC
 
 ## Status
 
-122 forge + 27 cargo tests green (incl. 2 independent audit suites) · **unaudited — no mainnet value yet**
+124 forge + 27 cargo tests green (incl. 2 independent audit suites) · **unaudited — no mainnet value yet**

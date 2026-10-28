@@ -12,13 +12,16 @@ Nothing here holds real funds until the audit gate below clears.
       Real sponsor policy (who, how much, quotas, refunds in postOp) is unwritten.
 - [ ] **ML-DSA verify = full path (~5.8M gas)**. Skale's KeyFactory precompute fast-path
       (already vendored in lib/mldsa-solidity) can cut this substantially — wiring is TODO.
-- [ ] **ZK path — pipeline IMPLEMENTED, on-chain wiring pending.** `guest/` now runs the
-      REAL ML-DSA-44 verification inside the SP1 zkVM (commitment + msgHash committed);
-      `host/` is the prover CLI (execute / core / groth16 modes, native-gnark); `src/verifier/ZKVerifier.sol`
-      pins the program vkey digest and validates SP1 proofs. Open items: deploy the official
-      SP1Verifier (or Gateway) on target networks, finalize VK_DIGEST_OFFSET empirically from
-      the first Groth16 proof, benchmark guest cycles + prover time. Direct path remains the
-      default verifier on the live Sepolia deployment.
+- [ ] **ZK path — pipeline IMPLEMENTED end-to-end except the final Groth16 on-chain proof run.**
+      `guest/` runs the REAL ML-DSA-44 verification inside the SP1 zkVM (commitment + msgHash
+      committed) — measured at 2.72M cycles. `host/` prover CLI (execute / core / groth16,
+      native-gnark): execute mode ✓, **core proof generated and locally verified in ~21 s** ✓.
+      `src/verifier/ZKVerifier.sol` pins the guest vkey-prefix, binds publicValues content
+      (commitment || msgHash) and calls the official SP1 verifier (v6.1.0 contracts vendored
+      in `src/sp1/`); 8 plumbing tests green. **Remaining:** one-time 6.2 GB Groth16 circuit
+      artifact download (`sp1-circuits.s3` bucket; link was throttled to ~1-2 MB/s from here)
+      → then a real Groth16 proof → SP1Verifier deployment → full on-chain ZK execute e2e.
+      Direct path remains the default verifier on the live Sepolia deployment.
       (See docs/engine-architecture.md. Direct path reveals pk+signature in calldata —
       quantum-safe but leaves an HNDL paper trail; ZK path removes it.)
 - [ ] **Key management UX is unwritten**: PQ secret key backup/recovery (32-byte seed via
