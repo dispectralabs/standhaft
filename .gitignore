@@ -17,5 +17,6 @@ out/
 .env.*
 !.env.example
 crypto/target/
+/broadcast/
 lib_tmp/
 vendor/
