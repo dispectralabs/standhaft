@@ -50,8 +50,8 @@ contract Vault {
     {
         uint256 n = nonce;
         bytes32 msgHash = keccak256(abi.encode(block.chainid, address(this), target, value, keccak256(data), n));
+        nonce = n + 1; // A-06: committed BEFORE _accept — reentrancy belt-and-braces
         _accept(msgHash, proof);
-        nonce = n + 1;
 
         (success,) = target.call{value: value}(data);
         if (!success) revert CallFailed(target, _returnData());
@@ -69,8 +69,8 @@ contract Vault {
         uint256 n = nonce;
         bytes32 callsHash = _hashCalls(calls);
         bytes32 msgHash = keccak256(abi.encode(block.chainid, address(this), callsHash, n));
+        nonce = n + 1; // A-06: committed BEFORE _accept
         _accept(msgHash, proof);
-        nonce = n + 1;
 
         uint256 len = calls.length;
         for (uint256 i = 0; i < len; ++i) {
