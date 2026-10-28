@@ -8,3 +8,5 @@ publish = false
 
 [dependencies]
 sp1-zkvm = "6.9.0"
+ml-dsa = { version = "0.1.1", default-features = false, features = ["alloc"] }
+sha3 = { version = "0.10", default-features = false }
