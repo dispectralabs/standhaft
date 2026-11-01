@@ -18,10 +18,11 @@ Nothing here holds real funds until the audit gate below clears.
       native-gnark): execute mode ✓, **core proof generated and locally verified in ~21 s** ✓.
       `src/verifier/ZKVerifier.sol` pins the guest vkey-prefix, binds publicValues content
       (commitment || msgHash) and calls the official SP1 verifier (v6.1.0 contracts vendored
-      in `src/sp1/`); 8 plumbing tests green. **Remaining:** one-time 6.2 GB Groth16 circuit
-      artifact download (`sp1-circuits.s3` bucket; link was throttled to ~1-2 MB/s from here)
-      → then a real Groth16 proof → SP1Verifier deployment → full on-chain ZK execute e2e.
-      Direct path remains the default verifier on the live Sepolia deployment.
+      in `src/sp1/`); 8 plumbing tests green. 
+
+      **Groth16 status:** Artifacts downloaded and extracted (6.2 GB, at `~/.sp1/circuits/groth16/v6.1.0/`).
+      **BLOCKER:** Local Groth16 proving via `sp1_recursion_gnark_ffi` (CGO → Go/gnark) **deadlocks on macOS ARM64 (M1/M2/M3/M4)** — this is a known SP1 upstream limitation. The CGO FFI call to gnark hangs indefinitely (CPU → 0%, process sleeps). 
+      **Workaround:** Use Linux (x86_64 or ARM64) or SP1 Prover Network (`SP1_PROVER=network`). On Linux, Groth16 wrap takes ~10-15 min. Direct path remains the default verifier on the live Sepolia deployment.
       (See docs/engine-architecture.md. Direct path reveals pk+signature in calldata —
       quantum-safe but leaves an HNDL paper trail; ZK path removes it.)
 - [ ] **Key management UX is unwritten**: PQ secret key backup/recovery (32-byte seed via
